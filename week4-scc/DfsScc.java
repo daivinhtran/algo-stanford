@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
-import java.util.Random;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Map.Entry;
@@ -33,7 +32,6 @@ public class DfsScc {
             if (!visited[i])
                 DFS(revGraph, i);
         }
-        // System.out.println("finishingtimeStack: " + finishingTimeStack);
 
         visited = new boolean[N + 1];
         ArrayList<Integer> scc = new ArrayList<>();
@@ -42,7 +40,6 @@ public class DfsScc {
             if (!DfsScc.visited[node]) {
                 scc = new ArrayList<>();
                 findScc(graph, node, scc);
-                //System.out.println("scc: " + scc);
                 maxSizesOfScc.add(scc.size());
             }
         }
@@ -53,15 +50,77 @@ public class DfsScc {
     }
 
     public static void DFS(Graph g,
+                    int leader) {
+
+        Stack<Integer> stack = new Stack<>();
+        stack.push(leader);
+        DfsScc.visited[leader] = true;
+
+        while (!stack.isEmpty()) {
+            if (allHeadsExplored(g, stack.peek())) {
+                DfsScc.finishingTimeStack.push(stack.pop());
+            }
+            else {
+                for (int head: g.getHeads(stack.peek())) {
+                    if (!visited[head]) {
+                        stack.push(head);
+                        DfsScc.visited[head] = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void findScc(Graph g,
+                        int leader,
+                        ArrayList<Integer> scc) {
+        Stack<Integer> stack = new Stack<>();
+        stack.push(leader);
+        DfsScc.visited[leader] = true;
+
+        scc.add(leader);
+
+        while (!stack.isEmpty()) {
+            if (!allHeadsExplored(g, stack.peek())) {
+                for (int head: g.getHeads(stack.peek())) {
+                    if (!visited[head]) {
+                        DfsScc.visited[head] = true;
+                        stack.push(head);
+                        scc.add(head);
+                        break;
+                    }
+                }
+            } else {
+                stack.pop();
+            }
+        }
+    }
+
+    public static boolean allHeadsExplored(Graph g, int node) {
+        ArrayList<Integer> heads = g.getHeads(node);
+
+        if (heads == null)
+            return true;
+
+        for (int head: heads)
+            if (!DfsScc.visited[head])
+                return false;
+
+        return true;
+    }
+
+    public static void DFSRecursive(Graph g,
                     int node) {
         DfsScc.visited[node] = true;
+
 
         ArrayList<Integer> heads = g.graph.get(node);
 
         if (heads != null) {
             for (int head: heads) {
                 if (!DfsScc.visited[head]) {
-                    DFS(g, head);
+                    DFSRecursive(g, head);
                 }
             }
         }
@@ -69,7 +128,7 @@ public class DfsScc {
         DfsScc.finishingTimeStack.push(node);
     }
 
-    public static void findScc(Graph g,
+    public static void findSccRecursive(Graph g,
                         int node,
                         ArrayList<Integer> scc) {
 
@@ -81,7 +140,7 @@ public class DfsScc {
         if (heads != null) {
             for (int head: heads) {
                 if (!DfsScc.visited[head]) {
-                    findScc(g, head, scc);
+                    findSccRecursive(g, head, scc);
                 }
             }
         }
