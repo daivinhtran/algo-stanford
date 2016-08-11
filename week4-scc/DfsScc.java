@@ -13,7 +13,9 @@ import java.util.Collections;
 import java.util.Stack;
 
 public class DfsScc {
-    private static int t = 0;
+    static boolean[] visited;
+    static Stack<Integer> finishingTimeStack;
+
     public static void main(String[] args) throws FileNotFoundException {
         Graph graph = new Graph();
         PriorityQueue<Integer> maxSizesOfScc = new PriorityQueue<>(Collections.reverseOrder());
@@ -23,96 +25,66 @@ public class DfsScc {
 
         int N = graph.size();
 
-        Stack<Integer> finishingTimeStack = DFS(revGraph);
-        System.out.println(finishingTimeStack);
-        boolean[] visisted = new boolean[N + 1];
+        finishingTimeStack = new Stack<>();
 
-        maxSizesOfScc = findSCC(graph, finishingTimeStack);
+        visited = new boolean[N + 1];
+
+        for (int i = N; i >= 1; i--) {
+            if (!visited[i])
+                DFS(revGraph, i);
+        }
+        // System.out.println("finishingtimeStack: " + finishingTimeStack);
+
+        visited = new boolean[N + 1];
+        ArrayList<Integer> scc = new ArrayList<>();
+        while (!finishingTimeStack.isEmpty()) {
+            int node = finishingTimeStack.pop();
+            if (!DfsScc.visited[node]) {
+                scc = new ArrayList<>();
+                findScc(graph, node, scc);
+                //System.out.println("scc: " + scc);
+                maxSizesOfScc.add(scc.size());
+            }
+        }
+
         for (int i = 0; i < 5; i++) {
             System.out.println(maxSizesOfScc.poll());
         }
     }
 
-    public static Stack<Integer> DFS(Graph g) {
-        int N = g.size();
-        int s = N;
-        boolean[] visisted = new boolean[N + 1];
-        Stack<Integer> myStack = new Stack<>();
-        Stack<Integer> finishStack = new Stack<>();
+    public static void DFS(Graph g,
+                    int node) {
+        DfsScc.visited[node] = true;
 
-        for (int i = N; i >= 1; i--) {
-            if (!visisted[i]) {
-                myStack.push(i);
-                visisted[i] = true;
+        ArrayList<Integer> heads = g.graph.get(node);
 
-                while (!myStack.isEmpty()) {
-                    int v = myStack.peek();
-                    // not outgoing edges from v
-                    ArrayList<Integer> heads = g.getHeads(v);
-                    if (heads == null) {
-                        finishStack.push(myStack.pop());
-                    } else {
-                        boolean allAdjacentVisited = true;
-                        for (int head: heads) {
-                            if (!visisted[head]) {
-                                allAdjacentVisited = false;
-
-                                myStack.push(head);
-                                visisted[head] = true;
-                            }
-                        }
-
-                        if (allAdjacentVisited) {
-                            finishStack.push(myStack.pop());
-                        }
-                    }
+        if (heads != null) {
+            for (int head: heads) {
+                if (!DfsScc.visited[head]) {
+                    DFS(g, head);
                 }
             }
         }
 
-        return finishStack;
+        DfsScc.finishingTimeStack.push(node);
     }
 
-    public static PriorityQueue<Integer>
-            findSCC(Graph g, Stack<Integer> finishingTimeStack) {
+    public static void findScc(Graph g,
+                        int node,
+                        ArrayList<Integer> scc) {
 
-        PriorityQueue<Integer> maxPQ = 
-            new PriorityQueue<>(Collections.reverseOrder());
+        DfsScc.visited[node] = true;
+        scc.add(node);
 
-        int N = finishingTimeStack.size();
-        boolean[] visited = new boolean[N + 1];
+        ArrayList<Integer> heads = g.getHeads(node);
 
-        int tail;
-        int counter = 0;
-
-        while (!finishingTimeStack.isEmpty()) {
-            int leader = finishingTimeStack.peek();
-            visited[leader] = true;
-            counter = 1;
-
-            System.out.println("leader: " + leader);
-
-            ArrayList<Integer> heads = g.getHeads(leader);
-
-            while (heads != null) {
-                for (int head: heads) {
-                    if (!visited[head]) {
-                        visited[head] = true;
-                        heads = g.getHeads(head);
-                        counter++;
-                        break;
-                    } else {
-                        heads = null;
-                    }
+        if (heads != null) {
+            for (int head: heads) {
+                if (!DfsScc.visited[head]) {
+                    findScc(g, head, scc);
                 }
-
-            }
-            maxPQ.add(counter);
-            for (int i = 0; i < counter; i++) {
-                finishingTimeStack.pop();
             }
         }
-        return maxPQ;
     }
 }
 
